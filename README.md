@@ -4,8 +4,8 @@
 scratch in pure PyTorch. It features a GPT-2 style decoder architecture and is deeply integrated
 with [LexiByte](https://pypi.org/project/lexibyte/), a custom Byte-Pair Encoding (BPE) tokenizer published on PyPI.
 
-This repository demonstrates elite, production-grade Deep Learning systems engineering, bypassing high-level wrappers (
-like HuggingFace) to explicitly implement low-level hardware optimizations and modular training mechanics.
+This repository demonstrates elite, production-grade Deep Learning systems engineering, bypassing high-level wrappers
+(like HuggingFace) to explicitly implement low-level hardware optimizations and modular training mechanics.
 
 ## 🚀 Architectural & Hardware Optimizations
 
@@ -14,14 +14,25 @@ like HuggingFace) to explicitly implement low-level hardware optimizations and m
 - **Mixed Precision (`bfloat16` & TF32):** Maximizes NVIDIA Ampere Tensor Cores by executing heavy GEMM operations in
   `bfloat16` via `torch.autocast` while preserving FP32 precision for unstable loss reductions.
 - **Architectural Weight Tying:** The Token Embedding matrix (`wte`) and the final Output Projection matrix (`lm_head`)
-  share the exact same physical memory. This stabilizes the gradients and saves ~30% of the total model parameters
+  share the exact same physical memory. This stabilizes the gradients and saves ~30% of the total model parameters'
   footprint.
-- **LexiByte Tokenizer Ecosystem:** Text ingestion does not rely on third-party black-box libraries. It utilizes a
+- **LexiByte Tokenizer Ecosystem:** Text ingestion does not rely on third-party black-box libraries. It uses a
   custom-built, PyPI-published NLP Tokenizer featuring Sennrich frequency maps and O(1) inference caching.
 - **Scaled Residual Initialization:** Custom layer initialization scales down residual projection weights
   by $1/\sqrt{2L}$ to prevent activation variance explosion in deep networks.
 - **Fused AdamW & Matrix Separation:** Prevents artificial degradation of network capacity by applying Weight Decay
   *only* to 2D matrices, intentionally ignoring 1D biases and LayerNorm scales.
+
+## 📚 Official Documentation
+
+Detailed explanations of the math, hardware scaling, and codebase usage can be found in the `docs/` folder:
+
+- [Architecture & Optimizations](docs/architecture.md) - Deep dive into GPT-2 mechanics, FlashAttention, and Weight
+  Tying.
+- [Data Pipeline & LexiByte](docs/data_pipeline.md) - Guide on downloading datasets and how tokenization orchestrates
+  with batching.
+- [Usage & Generation Guide](docs/usage_and_generation.md) - Run-book for executing training loops and standalone CLI
+  inference generation.
 
 ## ⚙️ Modular Project Structure
 
