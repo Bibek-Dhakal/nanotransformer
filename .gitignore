@@ -23,4 +23,5 @@ ENV/
 # Datasets
 *.bin
 data/
+input.txt
 PATCH.md
