@@ -1,5 +1,4 @@
 import inspect
-import math
 from dataclasses import dataclass
 
 import torch
@@ -10,32 +9,32 @@ from torch.nn import functional as F
 @dataclass
 class GPTConfig:
     block_size: int = 1024  # Max sequence length (Context Window)
-    vocab_size: int = 50304  # Padded from 50257 to nearest multiple of 64 for optimal GPU Tensor Core alignment
-    n_layer: int = 12       # Number of Transformer blocks
-    n_head: int = 12        # Number of Attention heads
-    n_embd: int = 768       # Embedding dimension (768 / 12 = 64 dimensions per head)
+    vocab_size: int = 50304  # Padded from 50,257 to the nearest multiple of 64 for optimal GPU Tensor Core alignment
+    n_layer: int = 12  # Number of Transformer blocks
+    n_head: int = 12  # Number of Attention heads
+    n_embd: int = 768  # Embedding dimension (768 / 12 = 64 dimensions per head)
 
 
 class CausalSelfAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
         assert config.n_embd % config.n_head == 0
-        
+
         # Key, Query, Value projections combined into one single linear layer for speed
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
-        
+
         # Output projection layer
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
-        
+
         # Flag for scaled initialization (1/sqrt(2L) variance scaling)
-        self.c_proj.NANOGPT_SCALE_INIT = 1.0  
-        
+        self.c_proj.NANOGPT_SCALE_INIT = 1.0
+
         self.n_head = config.n_head
         self.n_embd = config.n_embd
 
     def forward(self, x):
         B, T, C = x.size()  # Batch size, Time (Sequence Length), Channels (Embedding Dim)
-        
+
         # Calculate Query, Key, Values for all heads in batch simultaneously
         qkv = self.c_attn(x)
         q, k, v = qkv.split(self.n_embd, dim=2)
@@ -51,7 +50,7 @@ class CausalSelfAttention(nn.Module):
 
         # Re-assemble head outputs side-by-side
         y = y.transpose(1, 2).contiguous().view(B, T, C)
-        
+
         # Output projection
         y = self.c_proj(y)
         return y
@@ -62,10 +61,10 @@ class MLP(nn.Module):
         super().__init__()
         # Feed-forward network expands dimensionality by 4x
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd)
-        
+
         # GELU activation using the Tanh approximation (matches original GPT-2 exactly)
         self.gelu = nn.GELU(approximate='tanh')
-        
+
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd)
         self.c_proj.NANOGPT_SCALE_INIT = 1.0
 
@@ -104,7 +103,7 @@ class GPT(nn.Module):
             h=nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
             ln_f=nn.LayerNorm(config.n_embd),
         ))
-        
+
         # Language Model Head (Classification head to predict next token)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
@@ -139,7 +138,7 @@ class GPT(nn.Module):
         # Compute embeddings
         tok_emb = self.transformer.wte(idx)  # Token embeddings (B, T, n_embd)
         pos_emb = self.transformer.wpe(pos)  # Position embeddings (T, n_embd)
-        
+
         # Add position embeddings to token embeddings
         x = tok_emb + pos_emb
 
@@ -166,10 +165,10 @@ class GPT(nn.Module):
         from parameters that shouldn't (biases, layernorms).
         """
         param_dict = {pn: p for pn, p in self.named_parameters() if p.requires_grad}
-        
+
         # 2D Parameters (Linear weights, Embeddings) get weight decay
         decay_params = [p for n, p in param_dict.items() if p.dim() >= 2]
-        
+
         # 1D Parameters (Biases, LayerNorm scales) do NOT get weight decay
         nodecay_params = [p for n, p in param_dict.items() if p.dim() < 2]
 
@@ -181,6 +180,6 @@ class GPT(nn.Module):
         # Use Fused AdamW if executing on CUDA (massively speeds up parameter updates)
         fused_available = 'fused' in inspect.signature(torch.optim.AdamW).parameters
         use_fused = fused_available and device_type == 'cuda'
-        
+
         optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=(0.9, 0.95), eps=1e-8, fused=use_fused)
         return optimizer
