@@ -7,6 +7,60 @@ with [LexiByte](https://pypi.org/project/lexibyte/), a custom Byte-Pair Encoding
 This repository demonstrates elite, production-grade Deep Learning systems engineering, bypassing high-level wrappers (
 like HuggingFace) to explicitly implement low-level hardware optimizations and modular training mechanics.
 
+## 📊 Hardware Benchmarks & Performance
+
+By leveraging mixed-precision (`bfloat16`), TF32, and FlashAttention, this architecture achieves massive throughput on
+consumer hardware.
+
+**Training Hardware:** NVIDIA GeForce RTX 3060 (140W Mobile)  
+**Dataset:** Tiny Shakespeare  
+**Batch Size (B) x Context (T):** 8 x 256
+
+* **Time per step:** ~14.5 ms
+* **Throughput:** ~142,000 Tokens/sec
+* **Final Loss (2000 steps):** ~3.15
+
+## 🎭 Sample Generation
+
+After just 2000 steps of training (less than 1 minute on an RTX 3060), the model learns English syntax, spacing, and
+Shakespearean dialogue structures from scratch:
+
+**Prompt:** `"To be, or not to be"`
+**Output:**
+
+```text
+To be, or not to bend and all the deplAy.
+Thou cause to hence, let it do not have forth,
+Most matter, being country this sunsel.
+
+ore your words;ake, thereod keep boy to your budy.
+Lo you;INC upon the Vaurctaction,
+It is a sentent.
+
+BIO:
+You are you?
+ANTONZALrus of you; come but you, you Kate, trighte?
+```
+
+## 🧠 ML Theory: Understanding the Output (Why not train longer?)
+
+A common question is: *"Why does the output contain gibberish words like 'ANTONZALrus', and why not just train it for 3
+hours to fix it?"*
+
+This repository is designed as an **Architectural Proof of Concept**, bounded by the limitations of the dataset:
+
+1. **The Dataset Size:** The "Tiny Shakespeare" dataset is extremely small (~1 Megabyte, or ~300,000 tokens). Modern
+   LLMs require terabytes of text to learn semantic world-knowledge.
+2. **The Overfitting Trap:** Because the dataset is so small, training for more than 2,000 steps causes the model to
+   severely overfit. Instead of generalizing the English language, it will simply memorize the exact text of the input
+   file, resulting in an artificially low loss but zero generative capabilities.
+3. **The Success Criterion:** The goal of this 1-minute training run is not to build ChatGPT. The goal is to prove that
+   the Transformer architecture and custom tokenizer work. In just 60 seconds, the model successfully deduces script
+   formatting, punctuation usage, and structural syntax strictly from random noise.
+
+*(For massive, multi-hour training pipelines on gigabyte-scale datasets, see the upcoming `ModularML` orchestration
+repository in this portfolio).*
+
 ## 🚀 Architectural & Hardware Optimizations
 
 - **FlashAttention Integration:** Utilizes `F.scaled_dot_product_attention` to execute causal self-attention in highly

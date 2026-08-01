@@ -24,4 +24,6 @@ ENV/
 *.bin
 data/
 input.txt
+lexibyte_vocab.json
 PATCH.md
+
